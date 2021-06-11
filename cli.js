@@ -15,7 +15,8 @@ const commands = {
     'sign-binary': signBinary,
     'sign-delta': signDelta,
     'sign-external-delta' : signExternalDelta,
-    'create-frag-packets': createFragPackets
+    'create-frag-packets': createFragPackets,
+    'read-manifest': readFileManifest
 
 };
 
@@ -336,6 +337,23 @@ function signExternalDelta() {
 
 }
 
+function readFileManifest() {
+    program
+        .version(version)
+        .option('-i --input <file>', 'File to read manifest from')
+        .allowUnknownOption(false)
+        .parse(process.argv);
+
+    if (!program.input) {
+        console.log('--input <file> is required\n');
+        program.help();
+    }
+
+    _readManifest(program.input);
+}
+
+
+
 function _createManifest(file, overrideVersion, isDiffBuffer) {
     let signature = _sign(file);
     let sigLength = Buffer.from([ signature.length ]);
@@ -365,6 +383,70 @@ function _createManifest(file, overrideVersion, isDiffBuffer) {
 
     let manifest = Buffer.concat([ sigLength, signature, manufacturerUUID, deviceClassUUID, versionBuffer, isDiffBuffer ]);
     return manifest;
+}
+
+function _readManifest(file) {
+    FOTA_SIGNATURE_LENGTH = 1 + 72 + 16 + 16 + 4 + 4 
+    //total size of signature
+    //       1: lenght
+    //      72: sig ( + padding ?)
+    //      16: uuid manu
+    //      16: uuid device
+    //       4: u32 version encoded
+    //       4: u32 diffbuffer
+
+
+    if (!fs.existsSync(file)) {
+        console.log(file, 'does not exist');
+        process.exit(1);
+    }
+
+
+    readfile = fs.readFileSync(file);
+    readMani = readfile.slice(readfile.length-FOTA_SIGNATURE_LENGTH)
+    
+    offset = 0;
+    readMani_sigLength  = parseInt(readMani.slice(0,1).toString('hex') , 16); //stored as value
+    offset++;
+    readMani_sig        = readMani.slice(offset,offset+readMani_sigLength).toString('hex'); //stored as hex string
+    offset+=72;
+    readMani_manuUUID   = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
+    offset+=16;
+    readMani_deviceUUID = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
+    offset+=16;
+    readMani_versionBuf = readMani.slice(offset,offset+4);
+    offset+=4;
+    readMani_isDiff     = readMani.slice(offset,offset+4);
+    offset+=4;
+
+    console.log('-----------------------------------');
+    console.log('The file signature length is : ' + readMani_sigLength);
+    console.log('hex signature of file id : ');
+    console.log(readMani_sig);
+    console.log('-----------------------------------');
+    console.log('manuUUID is    : ' + readMani_manuUUID);
+    console.log('deviceUUID is  : ' + readMani_deviceUUID);
+    console.log('-----------------------------------');
+    //console.log(readMani_versionBuf[3]<<24);
+    //console.log(readMani_versionBuf[2]<<16);
+    //console.log(readMani_versionBuf[1]<<8);
+    //console.log(readMani_versionBuf[0]);
+    versionPatch = (readMani_versionBuf[0] + (readMani_versionBuf[1]<<8) + (readMani_versionBuf[2]<<16) + (readMani_versionBuf[3]<<24));
+    console.log('Bin version : ' + versionPatch);
+
+    if (readMani_isDiff[0] == 0){
+        console.log('This is a full binary, not a patch');
+    }else if (readMani_isDiff[0] == 1){
+        console.log('This is a JDIFF patch');
+        versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
+        console.log('Old binary size should be : ' + versionSize + ' bytes');
+    }else if (readMani_isDiff[0] == 2){
+        console.log('This is a DDELTA patch');
+        versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
+        console.log('Old binary size should be : ' + versionSize + ' bytes');
+    }else{
+        console.log('The patch type has not been recognised');
+    }
 }
 
 function _sign(file) {
