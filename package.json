@@ -1,0 +1,56 @@
+{
+  "_from": "lorawan-fota-signing-tool",
+  "_id": "lorawan-fota-signing-tool@1.0.2",
+  "_inBundle": false,
+  "_integrity": "sha512-U+VGdC6t/eUbCbkhhzQMMaGJpg3bIwZdriJnCieYeMo06QI0eYG1Cmp//oHUp3juQgb3ysAOrOwfWpz21A3sKQ==",
+  "_location": "/lorawan-fota-signing-tool",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "lorawan-fota-signing-tool",
+    "name": "lorawan-fota-signing-tool",
+    "escapedName": "lorawan-fota-signing-tool",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/lorawan-fota-signing-tool/-/lorawan-fota-signing-tool-1.0.2.tgz",
+  "_shasum": "f776eb3d2c0e51c632b5faa7ec67a79d5414d3a4",
+  "_spec": "lorawan-fota-signing-tool",
+  "_where": "/Users/arthurmille/Downloads/mbed_fuota",
+  "author": {
+    "name": "Jan Jongboom",
+    "email": "jan.jongboom@arm.com"
+  },
+  "bin": {
+    "lorawan-fota-signing-tool": "cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/janjongboom/lorawan-fota-signing-tool/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "commander": "^2.19.0",
+    "jdiff-js": "^1.0.0",
+    "uuid-1345": "^0.99.6"
+  },
+  "deprecated": false,
+  "description": "Sign updates for Mbed OS LoRaWAN firmware updates",
+  "homepage": "https://github.com/janjongboom/lorawan-fota-signing-tool#readme",
+  "license": "Apache-2.0",
+  "main": "cli.js",
+  "name": "lorawan-fota-signing-tool",
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janjongboom/lorawan-fota-signing-tool.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.2"
+}

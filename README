@@ -1,0 +1,12 @@
+originally positionned in : 
+/usr/local/lib/node_modules/lorawan-fota-signing-tool
+
+Modification have been made to cli.js to add support for external ddelta signing. -> The delta is not applied directly in the signing-tool but externally, you still have to reference the bins of the versions, to be able to have informations about size of the bin. This is used in signature.
+The Diff info of the signature is then signed with 0x02
+
+Diff Info : 
+	0x0 -> not an update (full binary)
+	0x1 -> JDIFF update
+	0x2 -> DDelta update (compressed using Ari Compressor)
+
+
