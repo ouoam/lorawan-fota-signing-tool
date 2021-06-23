@@ -64,10 +64,10 @@ You can also sign a delta created by an external program. The manifest of the bi
 Unlike the `sign-delta` command, the `sign-external-delta` does not build the patch. The patch as to be built and compressed by external tools.
 
 The options are : 
-    * `--old` : old version to take as reference
-    * `--new` : new version that will be built
-    * `-i`    : input file (already build & compressed patch)
-    * `-o`    : output file patch with correct added manifest to be recognised
+* `--old` : old version to take as reference
+* `--new` : new version that will be built
+* `-i`    : input file (already build & compressed patch)
+* `-o`    : output file patch with correct added manifest to be recognised
 
 To sign the external delta update:
 
@@ -98,7 +98,7 @@ Provides a user readable description of the manifest on a signed file, ready to 
 This allows the use to verify the version or patch type of a special device. 
 
 The options are : 
-    * `-i` : the input file to analyse
+* `-i` : the input file to analyse
 
 ```
 $ lorawan-fota-signing-tool read-manifest -i signed-binary.bin
