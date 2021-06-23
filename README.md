@@ -58,6 +58,25 @@ To sign the delta update:
 $ lorawan-fota-signing-tool sign-delta --old examples/xdot-blinky-v1.bin --new examples/xdot-blinky-v2.bin --output-format bin -o signed-diff.bin
 ```
 
+## Signing a external delta update
+
+You can also sign a delta created by an external program. The manifest of the binary file will contain information, saying it is a patch. Yet the patch will not be refereced by diff_info[0]=1 but with diff_info[0]=2, so that the device will know it is a different kind of patch. It this implementation, the external delta will always be signed as DDELTA. The end device implementing the DDELTA algorithms will be able to patch using this.
+Unlike the `sign-delta` command, the `sign-external-delta` does not build the patch. The patch as to be built and compressed by external tools.
+
+The options are : 
+    * `--old` : old version to take as reference
+    * `--new` : new version that will be built
+    * `-i`    : input file (already build & compressed patch)
+    * `-o`    : output file patch with correct added manifest to be recognised
+
+To sign the external delta update:
+
+```
+$ lorawan-fota-signing-tool sign-external-delta --old examples/xdot-blinky-v1.bin --new examples/xdot-blinky-v2.bin  -i examples/xdot-blinky-ddelta-v1v2.bin -o examples/xdot-blinky-ddelta-v1v2.bin
+```
+
+
+
 ## Fragmentation packets
 
 You can create fragmentation blocks based on the LoRa Alliance Fragmentated Data Block Transfer specification. This contains redundancy frames to recover lost packets. You can create this as standalone command, or directly from the `sign-binary` and `sign-delta` commands.
@@ -72,6 +91,18 @@ Output format needs to be either:
 
 * `plain` - Creates a plain text file, one packet per line.
 * `h` - Creates a C header file.
+
+## Read Manifest
+
+Provides a user readable description of the manifest on a signed file, ready to be sent over the network.
+This allows the use to verify the version or patch type of a special device. 
+
+The options are : 
+    * `-i` : the input file to analyse
+
+```
+$ lorawan-fota-signing-tool read-manifest -i signed-binary.bin
+```
 
 ## License
 
