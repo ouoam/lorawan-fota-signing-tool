@@ -220,8 +220,7 @@ function signDelta() {
 
     // create the diff between these binaries...
     let tempFile = Path.join(process.cwd(), Date.now() + '.diff');
-    let diffCmd = spawnSync('node', [
-        Path.join(__dirname, 'node_modules', 'jdiff-js', 'jdiff.js'),
+    let diffCmd = spawnSync(Path.join('bin', 'jdiff'), [
         program.old,
         program.new,
         tempFile

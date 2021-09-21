@@ -35,7 +35,6 @@
   "bundleDependencies": false,
   "dependencies": {
     "commander": "^2.19.0",
-    "jdiff-js": "^1.0.0",
     "uuid-1345": "^0.99.6"
   },
   "deprecated": false,
