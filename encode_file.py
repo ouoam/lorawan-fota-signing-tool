@@ -67,9 +67,10 @@ def main (infile, fragment_size, redundancy):
     temp = [8, (fcnt >> 8) & 0xFF, fcnt & 0xFF]
     data_rows[u] = temp + data_rows[u]
 
-  datarowsstring = "0x%02X" % data_row_count
+  datarowsstring_LOW = "0x%02X" % (data_row_count & 0xFF)
+  datarowsstring_HIGH = "0x%02X" % ((data_row_count >> 8) & 0xFF)
   fragmentsizestring = "0x%02X" % fragment_size
-  print ("Fragmentation header likely: [  0x02, 0x00, "+datarowsstring+", 0x00, "+fragmentsizestring+", 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]")
+  print ("Fragmentation header likely: [  0x02, 0x00, "+datarowsstring_LOW+", "+ datarowsstring_HIGH +", "+fragmentsizestring+", 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]")
   for line in data_rows:
     print(line)
 
