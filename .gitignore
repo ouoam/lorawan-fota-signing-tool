@@ -4,3 +4,10 @@
 .fota-keys/
 
 UpdateCerts.h
+
+node_modules/
+
+*.bin
+*.bin.bak
+
+packets.txt
