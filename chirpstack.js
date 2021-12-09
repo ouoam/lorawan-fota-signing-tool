@@ -1,16 +1,17 @@
-const program = require('commander');
-const grpc = require('@grpc/grpc-js');
-const protoLoader = require('@grpc/proto-loader');
-const fs = require('fs');
-const Path = require('path');
-const crypto = require("crypto");
-const csv = require("csvtojson");
+import { Command, Option } from 'commander';
+import grpc from '@grpc/grpc-js';
+import protoLoader from '@grpc/proto-loader';
+import fs from 'fs';
+import Path from 'path';
+import crypto from "crypto";
+import csv from "csvtojson";
+import chalk from 'chalk';
 
-const version = JSON.parse(fs.readFileSync(Path.join(__dirname, 'package.json'), 'utf-8')).version;
-program.version(version);
+const version = JSON.parse(fs.readFileSync(Path.join(Path.resolve(), 'package.json'), 'utf-8')).version;
+const program = new Command().version(version);
 
 const AVG_SEC_BETWEEN_FRAME = 4
-const PROTO_PATH = __dirname + '/fuota.proto';
+const PROTO_PATH = Path.resolve() + '/fuota.proto';
 
 var packageDefinition = protoLoader.loadSync(
     PROTO_PATH,
@@ -43,17 +44,35 @@ function myParseInt(value, dummyPrevious) {
 
 async function main() {
   program
-    .requiredOption('-s, --server <server>', 'FUOTA server (f.e. example.com)')
-    .option('-p, --port <port>', 'FUOTA server port', 8070)
+    .addOption(new Option('-s, --server <server>', 'FUOTA server (f.e. example.com)')
+      .makeOptionMandatory(true)
+      .env('SERVER')
+    )
+    .addOption(new Option('-p, --port <number>', 'FUOTA server port')
+      .default(8070)
+      .env('PORT')
+    )
     .requiredOption('-id, --app_id <id>', 'Application ID', myParseInt)
-    .requiredOption('-f, --patch <file>', 'Patch file')
-    .requiredOption('-d, --device_list <file>', 'List of device')
+    .requiredOption('--patch <file>', 'Patch file')
+    .requiredOption('--list <file>', 'List of device')
+    .addOption(new Option('-F, --no-follow', 'Do not follow until completed')
+      .env('NO_FOLLOW')
+    )
+    .addOption(new Option('-C, --no-colour', 'turn off colour output')
+      .env('NO_COLOUR')
+    )
     .allowUnknownOption(false)
     .parse();
 
   const options = program.opts();
 
-  console.log(options);
+  if (!options.colour) {
+    chalk.level = 0;
+  }
+
+  const date = chalk.magenta;
+  // const warning = chalk.hex('#FFA500'); // Orange color
+  const warning = chalk.black.bgYellow;
 
   const target = options.server + ':' + options.port;
   let client = new fuota_proto.FUOTAServerService(target,
@@ -65,7 +84,7 @@ async function main() {
     noheader: true,
     headers: ["DevEUI", "AppKey"],
     trim: true,
-  }).fromFile(options.device_list);
+  }).fromFile(options.list);
 
   devices = devices.map(dev => {
     return {
@@ -100,39 +119,77 @@ async function main() {
   }
 
   if (deploy.unicast_attempt_count > 1) {
-    console.warn("!!Warning!!");
-    console.warn("If some device did not respond MulticastClassCSessionSetup.");
-    console.warn("FUOTA server will retry and change the session start time.");
-    console.warn("But did not tell to already answer device to change the start time.");
-    console.warn("So already answer device will start the session before the FUOTA server sends multicast.");
-    console.warn("!!Warning!!");
+    console.log(warning("!!Warning!!"));
+    console.log("If some device did not respond MulticastClassCSessionSetup.");
+    console.log("FUOTA server will retry and change the session start time.");
+    console.log("But did not tell to already answer device to change the start time.");
+    console.log("So already answer device will start the session before the FUOTA server sends multicast.");
+    console.log(warning("!!Warning!!"));
   }
 
   let no_frag = Math.ceil(patch_file.length / deploy.fragmentation_fragment_size);
   let send_time = no_frag * AVG_SEC_BETWEEN_FRAME;
   let session_time = deploy.unicast_timeout.seconds * deploy.unicast_attempt_count;
   if (send_time > session_time) {
-    console.warn("!!Warning!!");
-    console.warn("Multicast send durution is", send_time, "sec.");
-    console.warn("Session durution is", session_time, "sec.");
-    console.warn("FUOTA server will close session before multicast send finish.");
-    console.warn("!!Warning!!");
+    console.log(warning("!!Warning!!"));
+    console.log("Multicast send duration is", send_time, "sec.");
+    console.log("Session duration is", session_time, "sec.");
+    console.log("FUOTA server will close session before multicast send finish.");
+    console.log(warning("!!Warning!!"));
   }
 
-  client.CreateDeployment({deployment: deploy}, async function(err, res) {
-    console.log("create", err, res);
+  function CreateDeployment(deploy) {
+    return new Promise((resolve, reject) => 
+      client.CreateDeployment({deployment: deploy}, function(err, res) {
+        if(err) {
+          return reject(err);
+        }
+        resolve(res.id);
+      })
+    );
+  }
+
+  function GetDeploymentStatus(deployID) {
+    return new Promise((resolve, reject) => 
+      client.GetDeploymentStatus({id: deployID}, function(err, res) {
+        if(err) {
+          return reject(err);
+        }
+        resolve(res);
+      })
+    );
+  }
+
+  let deployID = await CreateDeployment(deploy);
+  console.log("deployment ID", deployID);
+
+  if (options.follow) {
+    let lastUpdateTime = 0;
+    let printed = {};
+
     while(true) {
-      client.GetDeploymentStatus({id: res.id}, function(err, res) {
-        console.log("get", err);
-        console.dir(res, { depth: null })
-      });
-      client.GetDeploymentDeviceLogs({deployment_id: res.id, dev_eui: deploy.devices[0].dev_eui}, function(err, res) {
-        console.log("log", err);
-        console.dir(res, { depth: null })
-      });
-      await sleep(30000);
+      let status = await GetDeploymentStatus(deployID);
+      if (lastUpdateTime != status.updated_at.seconds) {
+        lastUpdateTime = status.updated_at.seconds;
+        delete status.device_status;
+        // delete status.created_at;
+        delete status.updated_at;
+
+        for (const [key, value] of Object.entries(status)) {
+          if (value !== null && !printed[key]) {
+            printed[key] = true;
+            let iso = new Date((value.seconds * 1000) + (value.nanos / 1000000)).toISOString();
+            console.log(key, date(iso));
+          }
+        }
+      }
+
+      if (status.frag_status_completed_at !== null) {
+        break;
+      }
+      await sleep(5000);
     }
-  });
+  }
 }
 
 main();

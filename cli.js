@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
-const { Command, Option }  = require('commander');
-const UUID = require('uuid-1345');
-const fs = require('fs');
-const Path = require('path');
-const spawnSync = require('child_process').spawnSync;
+import { Command, Option } from 'commander';
+import UUID from 'uuid-1345';
+import fs from 'fs';
+import Path from 'path';
+import { spawnSync } from 'child_process';
+import os from 'os';
+
+const __dirname = Path.resolve();
 const version = JSON.parse(fs.readFileSync(Path.join(__dirname, 'package.json'), 'utf-8')).version;
-const os = require('os');
 
 const certsFolder = Path.join(process.cwd(), '.fota-keys');
 
 const program = new Command();
+program.version(version)
 
 function myParseInt(value, dummyPrevious) {
   // parseInt takes a string and a radix
@@ -185,7 +188,7 @@ program
     fs.unlinkSync(tempFile);
 
     // this is diff
-    let oldFileLength = require('fs').readFileSync(options.old).length;
+    let oldFileLength = fs.readFileSync(options.old).length;
 
     let isDiffBuffer = Buffer.from([ 1, (oldFileLength >> 16) & 0xff, (oldFileLength >> 8) & 0xff, oldFileLength & 0xff ]);
 
@@ -233,7 +236,7 @@ program
     let inputFile = fs.readFileSync(options.inFile); //CHANGE TO INPUT
 
     // this is diff
-    let oldFileLength = require('fs').readFileSync(options.old).length;
+    let oldFileLength = fs.readFileSync(options.old).length;
 
     //building DiffBuffer with value 2
     let isDiffBuffer = Buffer.from([ 2, (oldFileLength >> 16) & 0xff, (oldFileLength >> 8) & 0xff, oldFileLength & 0xff ]);
@@ -295,7 +298,7 @@ function _createManifest(file, overrideVersion, isDiffBuffer) {
 }
 
 function _readManifest(file) {
-  FOTA_SIGNATURE_LENGTH = 1 + 72 + 16 + 16 + 4 + 4 
+  const FOTA_SIGNATURE_LENGTH = 1 + 72 + 16 + 16 + 4 + 4;
   //total size of signature
   //       1: lenght
   //      72: sig ( + padding ?)
@@ -311,21 +314,21 @@ function _readManifest(file) {
   }
 
 
-  readfile = fs.readFileSync(file);
-  readMani = readfile.slice(readfile.length-FOTA_SIGNATURE_LENGTH)
+  let readfile = fs.readFileSync(file);
+  let readMani = readfile.slice(readfile.length-FOTA_SIGNATURE_LENGTH)
   
-  offset = 0;
-  readMani_sigLength  = parseInt(readMani.slice(0,1).toString('hex') , 16); //stored as value
+  let offset = 0;
+  let readMani_sigLength  = parseInt(readMani.slice(0,1).toString('hex') , 16); //stored as value
   offset++;
-  readMani_sig        = readMani.slice(offset,offset+readMani_sigLength).toString('hex'); //stored as hex string
+  let readMani_sig        = readMani.slice(offset,offset+readMani_sigLength).toString('hex'); //stored as hex string
   offset+=72;
-  readMani_manuUUID   = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
+  let readMani_manuUUID   = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
   offset+=16;
-  readMani_deviceUUID = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
+  let readMani_deviceUUID = readMani.slice(offset,offset+16).toString('hex'); //stored as hex string
   offset+=16;
-  readMani_versionBuf = readMani.slice(offset,offset+4);
+  let readMani_versionBuf = readMani.slice(offset,offset+4);
   offset+=4;
-  readMani_isDiff     = readMani.slice(offset,offset+4);
+  let readMani_isDiff     = readMani.slice(offset,offset+4);
   offset+=4;
 
   console.log('-----------------------------------');
@@ -340,18 +343,18 @@ function _readManifest(file) {
   //console.log(readMani_versionBuf[2]<<16);
   //console.log(readMani_versionBuf[1]<<8);
   //console.log(readMani_versionBuf[0]);
-  versionPatch = (readMani_versionBuf[0] + (readMani_versionBuf[1]<<8) + (readMani_versionBuf[2]<<16) + (readMani_versionBuf[3]<<24));
+  let versionPatch = (readMani_versionBuf[0] + (readMani_versionBuf[1]<<8) + (readMani_versionBuf[2]<<16) + (readMani_versionBuf[3]<<24));
   console.log('Bin version : ' + versionPatch);
 
   if (readMani_isDiff[0] == 0){
     console.log('This is a full binary, not a patch');
   }else if (readMani_isDiff[0] == 1){
     console.log('This is a JDIFF patch');
-    versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
+    let versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
     console.log('Old binary size should be : ' + versionSize + ' bytes');
   }else if (readMani_isDiff[0] == 2){
     console.log('This is a DDELTA patch');
-    versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
+    let versionSize = ((readMani_isDiff[3]) + (readMani_isDiff[2]<<8) + (readMani_isDiff[1]<<16));
     console.log('Old binary size should be : ' + versionSize + ' bytes');
   }else{
     console.log('The patch type has not been recognised');
