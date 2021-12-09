@@ -38,7 +38,7 @@
     "@grpc/proto-loader": "^0.6.5",
     "commander": "^8.3.0",
     "csvtojson": "^2.0.10",
-    "uuid-1345": "^0.99.6"
+    "uuid-1345": "^1.0.2"
   },
   "deprecated": false,
   "description": "Sign updates for Mbed OS LoRaWAN firmware updates",

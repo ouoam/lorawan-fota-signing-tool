@@ -32,11 +32,20 @@ function aes128_encrypt(key, input) {
   return cipher.update(input);
 }
 
+function myParseInt(value, dummyPrevious) {
+  // parseInt takes a string and a radix
+  const parsedValue = parseInt(value, 10);
+  if (isNaN(parsedValue)) {
+    throw new commander.InvalidArgumentError('Not a number.');
+  }
+  return parsedValue;
+}
+
 async function main() {
   program
     .requiredOption('-s, --server <server>', 'FUOTA server (f.e. example.com)')
     .option('-p, --port <port>', 'FUOTA server port', 8070)
-    .requiredOption('-id, --app_id <id>', 'Application ID', parseInt)
+    .requiredOption('-id, --app_id <id>', 'Application ID', myParseInt)
     .requiredOption('-f, --patch <file>', 'Patch file')
     .requiredOption('-d, --device_list <file>', 'List of device')
     .allowUnknownOption(false)
