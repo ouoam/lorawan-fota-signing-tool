@@ -39,6 +39,7 @@
     "chalk": "^5.0.0",
     "commander": "^8.3.0",
     "csvtojson": "^2.0.10",
+    "dotenv": "^10.0.0",
     "uuid-1345": "^1.0.2"
   },
   "deprecated": false,

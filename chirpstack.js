@@ -1,11 +1,13 @@
-import { Command, Option } from 'commander';
-import grpc from '@grpc/grpc-js';
-import protoLoader from '@grpc/proto-loader';
 import fs from 'fs';
 import Path from 'path';
 import crypto from "crypto";
+
+import { Command, Option } from 'commander';
+import grpc from '@grpc/grpc-js';
+import protoLoader from '@grpc/proto-loader';
 import csv from "csvtojson";
 import chalk from 'chalk';
+import dotenv from 'dotenv';
 
 const version = JSON.parse(fs.readFileSync(Path.join(Path.resolve(), 'package.json'), 'utf-8')).version;
 const program = new Command().version(version);
@@ -46,13 +48,16 @@ async function main() {
   program
     .addOption(new Option('-s, --server <server>', 'FUOTA server (f.e. example.com)')
       .makeOptionMandatory(true)
-      .env('SERVER')
+      .env('FUOTA_HOST')
     )
     .addOption(new Option('-p, --port <number>', 'FUOTA server port')
-      .default(8070)
-      .env('PORT')
+      .default(8070).argParser(myParseInt)
+      .env('FUOTA_PORT')
     )
-    .requiredOption('-id, --app_id <id>', 'Application ID', myParseInt)
+    .addOption(new Option('-id, --app_id <id>', 'Application ID')
+      .makeOptionMandatory(true).argParser(myParseInt)
+      .env('APP_ID')
+    )
     .requiredOption('--patch <file>', 'Patch file')
     .requiredOption('--list <file>', 'List of device')
     .addOption(new Option('-F, --no-follow', 'Do not follow until completed')
@@ -192,4 +197,5 @@ async function main() {
   }
 }
 
+dotenv.config();
 main();
