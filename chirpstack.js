@@ -2,7 +2,7 @@ import fs from 'fs';
 import Path from 'path';
 import crypto from "crypto";
 
-import { Command, Option } from 'commander';
+import { Command, Option, InvalidArgumentError } from 'commander';
 import grpc from '@grpc/grpc-js';
 import protoLoader from '@grpc/proto-loader';
 import csv from "csvtojson";
@@ -35,13 +35,23 @@ function aes128_encrypt(key, input) {
   return cipher.update(input);
 }
 
-function myParseInt(value, dummyPrevious) {
+function myParseUint(value, dummyPrevious) {
   // parseInt takes a string and a radix
   const parsedValue = parseInt(value, 10);
   if (isNaN(parsedValue)) {
-    throw new commander.InvalidArgumentError('Not a number.');
+    throw new InvalidArgumentError('Not a number.');
+  }
+  if (parsedValue < 0) {
+    throw new InvalidArgumentError('Number is negative.');
   }
   return parsedValue;
+}
+
+function checkFile(value, dummyPrevious) {
+  if (!fs.existsSync(value)) {
+    throw new InvalidArgumentError('File not found.');
+  }
+  return value;
 }
 
 async function main() {
@@ -51,15 +61,15 @@ async function main() {
       .env('FUOTA_HOST')
     )
     .addOption(new Option('-p, --port <number>', 'FUOTA server port')
-      .default(8070).argParser(myParseInt)
+      .default(8070).argParser(myParseUint)
       .env('FUOTA_PORT')
     )
     .addOption(new Option('-id, --app_id <id>', 'Application ID')
-      .makeOptionMandatory(true).argParser(myParseInt)
+      .makeOptionMandatory(true).argParser(myParseUint)
       .env('APP_ID')
     )
-    .requiredOption('--patch <file>', 'Patch file')
-    .requiredOption('--list <file>', 'List of device')
+    .requiredOption('--patch <file>', 'Patch file', checkFile)
+    .requiredOption('--list <file>', 'List of device', checkFile)
     .addOption(new Option('-F, --no-follow', 'Do not follow until completed')
       .env('NO_FOLLOW')
     )
